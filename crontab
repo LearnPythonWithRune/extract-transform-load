@@ -1,2 +1,2 @@
-# run python script every minutes
-* * * * * /usr/local/bin/python /src/etl.py --host host.docker.internal --state_file /src/state.json > /proc/1/fd/1 2>/proc/1/fd/2
+# run python script every 5 minutes
+*/5 * * * * /usr/local/bin/python /src/etl.py --host host.docker.internal --state_file /src/state.json > /proc/1/fd/1 2>/proc/1/fd/2

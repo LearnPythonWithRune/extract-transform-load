@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from datetime import datetime
-from typing import List, Any
+from typing import List, Any, Tuple
 
 import mysql.connector  # type: ignore
 
@@ -46,7 +46,7 @@ def extract(db_connect: MySqlConnector, last_read: datetime):
     return new_rows
 
 
-def transform(rows_to_process: List):
+def transform(rows_to_process: List) -> Tuple[List, List]:
     transformation_map = {
         '🍎': 'apple',
         '🍐': 'pear',
@@ -73,11 +73,12 @@ def load(db_connect: MySqlConnector, rows_to_load: List, error_log: List, last_s
         sql_stmt = f"INSERT INTO egress(ingest_time, egress_value) VALUES('{ingest_time}', '{egress_value}')"
         try:
             db_connect.commit_query(sql_stmt)
-            if ingest_time > last_successful_ingest_time:
-                last_successful_ingest_time = ingest_time
         except Exception as e:
             error_msg = f'{type(e).__name__}: {e}'.replace('\'', '"')
             error_log.append((ingest_time, datetime.utcnow(), egress_value, error_msg))
+        # We update the last_successful_ingest_time for both cases (whether it worked or it was logged to error_log)
+        if ingest_time > last_successful_ingest_time:
+            last_successful_ingest_time = ingest_time
 
     return error_log, last_successful_ingest_time
 
@@ -138,7 +139,7 @@ def __init_argparse() -> argparse.ArgumentParser:
     return parser
 
 
-if __name__ == '__main__':
+def main():
     arg_parser = __init_argparse()
     args, _ = arg_parser.parse_known_args()
     host = args.host
@@ -146,3 +147,7 @@ if __name__ == '__main__':
     logger.info(f'Config ({host=}, {state_file=})')
 
     process(host, state_file)
+
+
+if __name__ == '__main__':
+    main()
